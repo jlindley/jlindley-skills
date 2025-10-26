@@ -1,0 +1,8 @@
+{
+  "name": "jlindley-skills",
+  "description": "Jim Lindley's custom skills for spike exploration, PRD facilitation, and Godot debugging",
+  "version": "1.0.0",
+  "author": {
+    "name": "Jim Lindley"
+  }
+}
