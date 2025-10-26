@@ -108,7 +108,21 @@ Approaches:
 ### Phase 5: Create Spike Infrastructure
 
 1. **Create branch**: `spike-[canonical-name]`
-2. **Create file**: `spike-notes-[canonical-name].md` with this structure:
+2. **Determine spike notes location** (use bash `test -d docs` to check):
+   - If `docs/` directory exists: create `docs/spike-notes-[canonical-name].md`
+   - If `docs/` does not exist: use AskUserQuestion tool to ask partner:
+     - Option 1: Create `docs/` directory and use it
+     - Option 2: Write `spike-notes-[canonical-name].md` to project root
+
+   **DO NOT**:
+   - Create alternative directories like `.spikes/`, `spikes/`, etc.
+   - Create subdirectories like `docs/spikes/`
+   - Invent custom organization structures
+   - Use symlinks or other indirection
+
+   **Use ONLY** `docs/` (if exists or created) OR project root.
+
+3. **Create file**: `spike-notes-[canonical-name].md` (in determined location) with this structure:
 
 ```markdown
 # Spike: [Canonical Name]
@@ -142,13 +156,14 @@ Approaches:
 [Any additional context]
 ```
 
-3. **Commit spike notes** to the spike branch
-4. **Tell partner**: "Spike defined. Ready to execute with branches like `spike-[canonical-name]-1`, `spike-[canonical-name]-2`, etc."
+4. **Commit spike notes** to the spike branch
+5. **Tell partner**: "Spike defined. Ready to execute with branches like `spike-[canonical-name]-1`, `spike-[canonical-name]-2`, etc."
 
 ## Red Flags - STOP and Reconsider
 
 - **Planning implementation details** → You're executing, not defining
 - **Creating WIP branch to start coding** → You're executing, not defining
+- **Creating custom spike directories** (`.spikes/`, `spikes/`, etc.) → Use docs/ or project root only
 - **Asking many rounds of questions** → Limit to 2 rounds max
 - **"I need more information before I can start"** → Start with what you have
 - **"20 minutes isn't enough time"** → Time pressure is not an excuse to skip steps
