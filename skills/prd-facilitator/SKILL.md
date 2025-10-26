@@ -1,8 +1,6 @@
 ---
 name: prd-facilitator
-description: Transform project ideas into requirements documentation focusing on user outcomes and functionality, not implementation
-when_to_use: when partner describes a new project or feature idea and needs a PRD capturing requirements before implementation, when unclear what to build but not yet ready for technical planning
-version: 1.0.0
+description: Transform project ideas into requirements documentation focusing on user outcomes and functionality, not implementation. Use when partner describes a new project or feature idea and needs a PRD capturing requirements before implementation, when unclear what to build but not yet ready for technical planning
 ---
 
 # PRD Facilitator
@@ -16,6 +14,16 @@ Transform rough project ideas into clear Product Requirements Documents (PRDs) t
 **Announce at start**: "I'm using the PRD Facilitator skill to help you document requirements for this project."
 
 ## The Process
+
+Copy this checklist to track progress:
+
+```
+PRD Facilitator Progress:
+- [ ] Phase 1: Understanding User Outcomes (problem, users, success criteria gathered)
+- [ ] Phase 2: Expert Routing (domain expert suggested if applicable, or skipped)
+- [ ] Phase 3: Document Requirements (PRD created in docs/prd.md)
+- [ ] Phase 4: Clean Handoff (stopped cleanly, offered implementation transition)
+```
 
 ### Phase 1: Understanding User Outcomes
 

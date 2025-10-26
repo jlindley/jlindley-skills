@@ -1,8 +1,6 @@
 ---
 name: godot-visual-bug-diagnosis
-description: Debug visual and spatial bugs in Godot games through user observation, Godot-specific diagnosis, and test-driven fixes
-when_to_use: when debugging visual or input issues in Godot where the user can observe the game but you cannot, when bugs involve rendering, positioning, animation, or coordinate systems, or when "what user sees" differs from expected behavior. For pure logic bugs use Systematic Debugging instead
-version: 1.0.0
+description: Debug visual and spatial bugs in Godot games through user observation, Godot-specific diagnosis, and test-driven fixes. Use when debugging visual or input issues in Godot where the user can observe the game but you cannot, when bugs involve rendering, positioning, animation, or coordinate systems, or when "what user sees" differs from expected behavior. For pure logic bugs use Systematic Debugging instead
 ---
 
 # Godot Visual Bug Diagnosis
@@ -38,6 +36,17 @@ If you haven't gathered observations (Phase 1) and diagnosed from those observat
 - Complex multi-component bugs → skills/debugging/systematic-debugging
 
 ## The Five Phases
+
+Copy this checklist to track progress:
+
+```
+Godot Visual Bug Diagnosis Progress:
+- [ ] Phase 1: Gather Observations (detailed visual behavior from user)
+- [ ] Phase 2: Diagnose in Godot Terms (hypothesis using Godot concepts + research)
+- [ ] Phase 3: Identify Testable Logic (decision: TDD or manual validation)
+- [ ] Phase 4: Propose Fix (single fix following diagnosis)
+- [ ] Phase 5: User Validates & Iterate (user confirmation or return to earlier phase)
+```
 
 **You MUST complete each phase before proceeding to the next.**
 

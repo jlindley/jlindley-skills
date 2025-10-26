@@ -1,8 +1,6 @@
 ---
 name: defining-spikes
-description: Create spike definitions with canonical names and numbered approaches for parallel exploratory implementation
-when_to_use: when partner has an underdefined feature idea and wants to explore multiple implementation approaches in parallel, when uncertain which technical approach is best, or when comparing alternatives before committing to implementation
-version: 1.0.0
+description: Create spike definitions with canonical names and numbered approaches for parallel exploratory implementation. Use when partner has an underdefined feature idea and wants to explore multiple implementation approaches in parallel, when uncertain which technical approach is best, or when comparing alternatives before committing to implementation
 ---
 
 # Defining Spikes
@@ -26,6 +24,17 @@ A spike definition is NOT implementation. It's a structured exploration plan con
 **You are defining what to explore, not exploring it yourself.**
 
 ## The Process
+
+Copy this checklist to track progress:
+
+```
+Defining Spikes Progress:
+- [ ] Phase 1: Understanding Desired Outcome (goal and success criteria gathered)
+- [ ] Phase 2: Implementation Constraints (must-haves/must-nots identified or skipped)
+- [ ] Phase 3: Choose Canonical Name (kebab-case identifier confirmed with partner)
+- [ ] Phase 4: Generate Approaches (2-3 genuinely different approaches listed)
+- [ ] Phase 5: Create Spike Infrastructure (branch, notes file committed)
+```
 
 ### Phase 1: Understanding Desired Outcome (Mandatory - ONE round)
 
