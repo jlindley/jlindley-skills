@@ -1,6 +1,8 @@
 ---
 name: autonomous-execution
 description: Use when executing implementation plans autonomously over multiple hours without human intervention, when you need to work overnight or during extended periods - executes plans to completion with creative decision-making, context preservation, state management for resume capability, and comprehensive reporting
+tested_models:
+  - claude-sonnet-4-5-20250929
 ---
 
 # Autonomous Execution
@@ -48,7 +50,7 @@ Execute implementation plans to completion without human intervention, making cr
   ☐ Check time budget (stop if > 6 hours)
   ☐ Review task against design doc
   ☐ Adapt plan if needed (update plan file)
-  ☐ Dispatch implementation subagent
+  ☐ Dispatch subagent for implementation
   ☐ Subagent uses requesting-code-review
   ☐ Receive review feedback
   ☐ Auto-fix issues (Critical, Important, selective Minor)
@@ -164,9 +166,9 @@ If task needs adaptation:
 - Document the decision in execution log
 - Continue forward without asking
 
-**3. Dispatch implementation subagent**
+**3. Dispatch subagent for implementation**
 
-Use Task tool (general-purpose subagent):
+Use Task tool with general-purpose agent:
 
 ```
 description: "Implement Task N: [task name]"
@@ -198,7 +200,7 @@ prompt: |
   - Creative decisions made (if any)
 ```
 
-**4. Receive feedback from implementation subagent**
+**4. Receive feedback from subagent**
 
 Subagent returns:
 - What was implemented
@@ -210,10 +212,10 @@ Subagent returns:
 **5. Auto-fix issues (autonomous decision-making)**
 
 **Critical issues:** ALWAYS fix
-- Dispatch fix subagent with systematic-debugging instructions
+- Dispatch subagent with systematic-debugging instructions
 
 **Important issues:** ALWAYS fix
-- Dispatch fix subagent
+- Dispatch subagent for fixes
 
 **Minor issues:** Judgment-based
 - Fix if: easy (< 10 min estimate) OR user-facing annoyance
@@ -222,7 +224,7 @@ Subagent returns:
 
 **6. Handle blockers creatively**
 
-If implementation subagent reports blockers:
+If subagent reports blockers:
 
 **Test failures after fixes:**
 - Try alternative implementation approach
