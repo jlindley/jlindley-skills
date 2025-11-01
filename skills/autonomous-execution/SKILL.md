@@ -79,17 +79,19 @@ If in main branch: ERROR - "autonomous-execution requires isolated worktree"
 
 **2. Read and understand design document (WHY)**
 
-Read the design document thoroughly. Summarize understanding:
+Read the design document thoroughly. Summarize understanding in execution log:
 - What are we building?
 - Why does it matter?
 - What value does it provide?
 - What are the key constraints?
 
-Ask user to confirm understanding before proceeding.
+Proceed autonomously with this understanding.
 
 **3. Load implementation plan (HOW)**
 
 Read implementation plan and extract all tasks. Create TodoWrite with all tasks.
+
+If plan header says "REQUIRED SUB-SKILL: Use superpowers:executing-plans", update it to say "Using autonomous-execution skill for autonomous execution" to avoid confusion.
 
 **4. Create state file**
 
@@ -179,15 +181,21 @@ prompt: |
   4. Commit your work
   5. Report back
 
-  Context documents:
-  - Design doc (WHY): [design-doc-path]
-  - Execution log (prior decisions): [execution-log-path]
-
-  Document any creative decisions you make in the execution log.
+  Context documents (read both for full context):
+  - Design doc (WHY): [design-doc-path] - Read the full design doc to understand intent and constraints
+  - Execution log (prior decisions): [execution-log-path] - See what decisions were made in earlier tasks
 
   Work autonomously. If you encounter problems, use your judgment to resolve them.
 
-  Report: What you implemented, code review feedback received, test results, files changed, any blockers.
+  When you make creative decisions, note them in your report (main agent will document in execution log).
+
+  Report back concisely:
+  - What you implemented (1-2 sentences)
+  - Test results (pass/fail counts)
+  - Files changed (list)
+  - Code review: Only report unaddressable Critical/Important issues (if all fixed, just say "all issues resolved")
+  - Any blockers encountered
+  - Creative decisions made (if any)
 ```
 
 **4. Receive feedback from implementation subagent**
@@ -307,9 +315,9 @@ If compaction happens mid-execution, the next task iteration will:
 ## Context Preservation Strategy
 
 **Main agent (autonomous-execution) should ONLY:**
-- Hold design document understanding
-- Hold current implementation plan
-- Track execution log (summaries only)
+- Hold design document understanding (initial read, summarize in execution log)
+- Hold current implementation plan (file path, updated as needed)
+- Hold execution log file path (append summaries, don't hold full content)
 - Manage TodoWrite
 - Track time
 
@@ -319,7 +327,14 @@ If compaction happens mid-execution, the next task iteration will:
 - Debug issues directly
 - All implementation work = subagent territory
 
-**Why:** Multi-hour execution needs aggressive context preservation. Subagents handle all heavy lifting.
+**Subagents get fresh context each time:**
+- Can read full design doc (no context cost to main agent)
+- Can read full execution log (for prior task context)
+- Can read implementation plan (for their specific task)
+- Can read/write code files freely
+- Should read deeply to understand WHY and make informed decisions
+
+**Why:** Multi-hour execution needs aggressive context preservation FOR THE MAIN AGENT. Subagents have fresh context, so let them read everything they need.
 
 ## Common Rationalizations
 
@@ -329,7 +344,7 @@ If compaction happens mid-execution, the next task iteration will:
 | "Reading design doc is optional" | Design (WHY) is source of truth. Plan (HOW) adapts to WHY. |
 | "I can track everything in memory" | Long sessions need persistent state for resume and cross-subagent context |
 | "I'll run forever until done" | Time budgets prevent runaway resource consumption |
-| "Reading code directly is fine" | Burns context. Subagents preserve main agent context. |
+| "Reading code directly is fine" | Main agent reading code burns context. Subagents preserve main agent context. |
 | "The plan is sacred" | Plans adapt. Design intent is sacred. |
 | "This design conflict needs user confirmation" | Make autonomous decisions. Document in execution log. Continue forward. |
 | "More information in report is better" | Matrix IS the summary. Nothing after legend line. |
