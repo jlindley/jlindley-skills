@@ -200,18 +200,22 @@ prompt: |
 
 **4. Request code review**
 
-Get git SHAs and derive review filename from plan:
+Get git SHAs and construct review filename:
 
 ```bash
-BASE_SHA=$(git log --oneline -10 | grep "Task $((N-1))" | head -1 | awk '{print $1}')
-# If Task 1, use: BASE_SHA=$(git rev-parse HEAD~1)
-HEAD_SHA=$(git rev-parse HEAD)
+# Simple approach: compare current commit to previous
+BASE_SHA=$(git rev-parse HEAD^)  # Previous commit (before implementation)
+HEAD_SHA=$(git rev-parse HEAD)   # Current commit (after implementation)
 
-# Derive from plan filename: docs/plans/YYYY-MM-DD-feature-implementation.md
-# → docs/reviews/YYYY-MM-DD-feature-task-N-review.md
-PLAN_PREFIX=$(basename [implementation-plan-path] -implementation.md)
-REVIEW_FILE="docs/reviews/${PLAN_PREFIX}-task-N-review.md"
+# Derive review filename from plan path
+# Example: docs/plans/2025-11-01-fix-timezone-handling.md
+# → docs/reviews/2025-11-01-fix-timezone-handling-task-N-review.md
+PLAN_FILE="[implementation-plan-path]"
+PLAN_NAME=$(basename "$PLAN_FILE" .md)
+REVIEW_FILE="docs/reviews/${PLAN_NAME}-task-N-review.md"
 ```
+
+**Note:** If implementation subagent made multiple commits, consider using the SHA from before the task started (tracked in execution log or state file).
 
 Dispatch code-reviewer subagent:
 
@@ -227,6 +231,11 @@ prompt: |
   Base SHA: [BASE_SHA]
   Head SHA: [HEAD_SHA]
 
+  **MANDATORY FILE WRITING REQUIREMENT:**
+  You MUST write a complete review to [REVIEW_FILE] before reporting back.
+  This is REQUIRED even if the code is perfect (write "No issues found").
+  Do NOT skip file writing to "be concise" - the file is the deliverable.
+
   Review the changes and:
   1. Write detailed review to [REVIEW_FILE] with:
      - Strengths
@@ -234,7 +243,7 @@ prompt: |
      - Important issues (architecture, maintainability)
      - Minor issues (style, naming, comments)
      - Assessment
-  2. Report back with ONLY counts (not details)
+  2. After writing the file, report back with ONLY counts (not details)
 
   Report back:
   - Review file: [REVIEW_FILE]
@@ -243,9 +252,31 @@ prompt: |
   - Minor: [count]
 ```
 
+**4a. Verify review file exists**
+
+**CRITICAL:** Code-reviewer subagents sometimes report creating files that don't actually exist.
+
+```bash
+# Immediately verify the review file was created
+if [ ! -f "$REVIEW_FILE" ]; then
+    # File doesn't exist - code-reviewer failed silently
+    # Document in execution log and proceed without review
+    echo "⚠️ Code-reviewer did not create review file, proceeding without formal review"
+fi
+```
+
+If review file missing:
+- Document in execution log: "Code-reviewer failed to create review file (known issue)"
+- Skip step 5 (no review feedback to handle)
+- Proceed to step 6 (Handle blockers)
+  - If implementation reported test failures or blockers, step 6 will handle them
+  - If implementation was successful, step 6 will be a no-op and continue to step 7
+
 **5. Handle code review feedback**
 
 Code-reviewer returns issue counts only (detailed review written to file).
+
+**Session limit handling:** If code-reviewer hits "Session limit reached", treat as missing review file (step 4a).
 
 **If Critical or Important > 0:**
 
@@ -329,7 +360,11 @@ Update `current_task_number` in state file. Increment.
 **9. Mark complete and commit**
 
 - Mark task completed in TodoWrite
-- Ensure work is committed
+- Commit all work from this task:
+  - Implementation changes (from step 3)
+  - Code review file (from step 4, if it exists)
+  - Code review fixes (from step 5, if any)
+- Verify review file is committed: `git status docs/reviews/` should show no untracked files
 - Continue to next task
 
 ### Completion Phase
@@ -379,6 +414,44 @@ If compaction happens mid-execution, the next task iteration will:
 - Resume from current task
 - Continue normally
 
+### State File Resilience
+
+**If state file goes missing mid-execution:**
+
+The state file (`.autonomous-execution-state.json`) is untracked by git and can disappear due to:
+- Subagent cleanup operations
+- File system operations
+- Unknown causes
+
+**Recovery procedure:**
+
+```bash
+# Check if state file exists
+if [ ! -f .autonomous-execution-state.json ]; then
+    # Recreate from execution log
+    # Count completed tasks in execution log to determine current_task_number
+    COMPLETED=$(grep -c "^## Task [0-9]*:.*✅" docs/plans/*execution-log.md)
+    CURRENT_TASK=$((COMPLETED + 1))
+
+    # Recreate state file
+    cat > .autonomous-execution-state.json << EOF
+{
+  "skill": "autonomous-execution",
+  "started_at": "[from execution log header]",
+  "design_doc": "[from execution log]",
+  "implementation_plan": "[from execution log]",
+  "execution_log": "[path to execution log]",
+  "current_task_number": $CURRENT_TASK,
+  "total_tasks": [total from plan],
+  "time_budget_hours": 6,
+  "status": "in_progress"
+}
+EOF
+fi
+```
+
+**Key insight:** Execution log is the source of truth. State file is just a convenience for tracking. If it disappears, recreate from execution log and continue.
+
 ## Context Preservation Strategy
 
 **Main agent (autonomous-execution) should ONLY:**
@@ -402,6 +475,23 @@ If compaction happens mid-execution, the next task iteration will:
 - Should read deeply to understand WHY and make informed decisions
 
 **Why:** Multi-hour execution needs aggressive context preservation FOR THE MAIN AGENT. Subagents have fresh context, so let them read everything they need.
+
+## Common Questions
+
+**Q: When do I mark a task complete in TodoWrite?**
+A: After ALL work for that task is done - implementation + code review + fixes. Don't mark complete until you're moving to the next task.
+
+**Q: What if the implementation plan is at the repo root, not in the worktree?**
+A: That's fine. Plan files can be anywhere in the repo. Just use the correct path when referencing it (e.g., `../../docs/plans/plan.md` from worktree, or absolute path).
+
+**Q: How much detail for "creative decisions"?**
+A: Document significant departures from the plan - changed approaches, workarounds for blockers, schema fixes, etc. Skip minor tweaks (variable renames, comment improvements). If you had to think hard about it, document it.
+
+**Q: What if code-reviewer takes too long or times out?**
+A: Wait up to 5 minutes. If it hasn't returned, treat as missing review file (step 4a) and continue.
+
+**Q: Should I commit after each sub-step or at the end of the task?**
+A: Implementation subagent commits their work (step 3). Fix subagent commits their fixes (step 5). Main agent verifies everything is committed including review file (step 9). Each subagent handles their own commits.
 
 ## Common Rationalizations
 
