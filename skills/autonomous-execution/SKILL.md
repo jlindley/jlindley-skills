@@ -364,7 +364,8 @@ Update `current_task_number` in state file. Increment.
   - Code review file (from step 4, if it exists)
   - Code review fixes (from step 5, if any)
 - Verify review file is committed: `git status docs/reviews/` should show no untracked files
-- Mark task completed in TodoWrite
+- Mark **this high-level task** completed in TodoWrite (e.g., "Task 1: Add timezone tests")
+  - Note: Granular subtasks get marked as you go; this is the final task-level completion
 - Continue to next task
 
 ### Completion Phase
@@ -461,7 +462,7 @@ State file is just a convenience. Execution log is permanent and sufficient to r
 ## Common Questions
 
 **Q: When do I mark a task complete in TodoWrite?**
-A: In step 9, AFTER all work is committed. Order: implementation (step 3) → code review (step 4-5) → commit everything including review file (step 9) → mark complete in TodoWrite → move to next task. Never mark complete before step 9's commit verification.
+A: In step 9, mark the **high-level implementation plan task** complete (e.g., "Task 1: Add timezone tests"). This happens AFTER all work is committed. TodoWrite may have many granular subtasks during implementation - those get marked as you go. But the main task completion happens in step 9 after commit verification.
 
 **Q: What if the implementation plan is at the repo root, not in the worktree?**
 A: That's fine. Plan files can be anywhere in the repo. Just use the correct path when referencing it (e.g., `../../docs/plans/plan.md` from worktree, or absolute path).
