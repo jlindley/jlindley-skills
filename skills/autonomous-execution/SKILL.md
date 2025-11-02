@@ -357,14 +357,14 @@ Note: Fix subagent already wrote "Code Review Fixes" section to execution log (i
 
 Update `current_task_number` in state file. Increment.
 
-**9. Mark complete and commit**
+**9. Commit and mark complete**
 
-- Mark task completed in TodoWrite
 - Commit all work from this task:
   - Implementation changes (from step 3)
   - Code review file (from step 4, if it exists)
   - Code review fixes (from step 5, if any)
 - Verify review file is committed: `git status docs/reviews/` should show no untracked files
+- Mark task completed in TodoWrite
 - Continue to next task
 
 ### Completion Phase
@@ -461,7 +461,7 @@ State file is just a convenience. Execution log is permanent and sufficient to r
 ## Common Questions
 
 **Q: When do I mark a task complete in TodoWrite?**
-A: After ALL work for that task is done - implementation + code review + fixes. Don't mark complete until you're moving to the next task.
+A: In step 9, AFTER all work is committed. Order: implementation (step 3) → code review (step 4-5) → commit everything including review file (step 9) → mark complete in TodoWrite → move to next task. Never mark complete before step 9's commit verification.
 
 **Q: What if the implementation plan is at the repo root, not in the worktree?**
 A: That's fine. Plan files can be anywhere in the repo. Just use the correct path when referencing it (e.g., `../../docs/plans/plan.md` from worktree, or absolute path).
@@ -471,9 +471,6 @@ A: Document significant departures from the plan - changed approaches, workaroun
 
 **Q: What if code-reviewer takes too long or times out?**
 A: Wait up to 5 minutes. If it hasn't returned, treat as missing review file (step 4a) and continue.
-
-**Q: Should I commit after each sub-step or at the end of the task?**
-A: Implementation subagent commits their work (step 3). Fix subagent commits their fixes (step 5). Main agent verifies everything is committed including review file (step 9). Each subagent handles their own commits.
 
 ## Common Rationalizations
 
