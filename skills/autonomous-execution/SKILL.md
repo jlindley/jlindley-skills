@@ -51,9 +51,9 @@ Execute implementation plans to completion without human intervention, making cr
   ☐ Review task against design doc
   ☐ Adapt plan if needed (update plan file)
   ☐ Dispatch subagent for implementation
-  ☐ Subagent uses requesting-code-review
-  ☐ Receive review feedback
-  ☐ Auto-fix issues (Critical, Important, selective Minor)
+  ☐ Request code review (dispatch code-reviewer)
+  ☐ If Critical/Important issues, dispatch subagent for fixes
+  ☐ Handle blockers if any
   ☐ Update execution log
   ☐ Update state file
   ☐ Mark task complete in TodoWrite
@@ -179,9 +179,8 @@ prompt: |
   Read that task carefully. Your job is to:
   1. Implement exactly what the task specifies
   2. Follow TDD as specified in the task
-  3. Use requesting-code-review skill when done
-  4. Commit your work
-  5. Report back
+  3. Commit your work
+  4. Report back
 
   Context documents (read both for full context):
   - Design doc (WHY): [design-doc-path] - Read the full design doc to understand intent and constraints
@@ -195,38 +194,103 @@ prompt: |
   - What you implemented (1-2 sentences)
   - Test results (pass/fail counts)
   - Files changed (list)
-  - Code review: Only report unaddressable Critical/Important issues (if all fixed, just say "all issues resolved")
   - Any blockers encountered
   - Creative decisions made (if any)
 ```
 
-**4. Receive feedback from subagent**
+**4. Request code review**
 
-Subagent returns:
-- What was implemented
-- Code review feedback (Critical/Important/Minor issues)
-- Test results
-- Files changed
-- Any blockers encountered
+Get git SHAs and derive review filename from plan:
 
-**5. Auto-fix issues (autonomous decision-making)**
+```bash
+BASE_SHA=$(git log --oneline -10 | grep "Task $((N-1))" | head -1 | awk '{print $1}')
+# If Task 1, use: BASE_SHA=$(git rev-parse HEAD~1)
+HEAD_SHA=$(git rev-parse HEAD)
 
-**Critical issues:** ALWAYS fix
-- Dispatch subagent with systematic-debugging instructions
+# Derive from plan filename: docs/plans/YYYY-MM-DD-feature-implementation.md
+# → docs/reviews/YYYY-MM-DD-feature-task-N-review.md
+PLAN_PREFIX=$(basename [implementation-plan-path] -implementation.md)
+REVIEW_FILE="docs/reviews/${PLAN_PREFIX}-task-N-review.md"
+```
 
-**Important issues:** ALWAYS fix
-- Dispatch subagent for fixes
+Dispatch code-reviewer subagent:
 
-**Minor issues:** Judgment-based
-- Fix if: easy (< 10 min estimate) OR user-facing annoyance
-- Else: document in execution log
-- Timebox all minor fixes: 15 min total
+```
+description: "Review Task N: [task name]"
+subagent_type: superpowers:code-reviewer
 
-**6. Handle blockers creatively**
+prompt: |
+  Review the implementation of Task N from [implementation-plan-path].
 
-If subagent reports blockers:
+  What was implemented: [summary from implementation subagent]
+  Requirements: Task N in [implementation-plan-path]
+  Base SHA: [BASE_SHA]
+  Head SHA: [HEAD_SHA]
 
-**Test failures after fixes:**
+  Review the changes and:
+  1. Write detailed review to [REVIEW_FILE] with:
+     - Strengths
+     - Critical issues (bugs, security, correctness)
+     - Important issues (architecture, maintainability)
+     - Minor issues (style, naming, comments)
+     - Assessment
+  2. Report back with ONLY counts (not details)
+
+  Report back:
+  - Review file: [REVIEW_FILE]
+  - Critical: [count]
+  - Important: [count]
+  - Minor: [count]
+```
+
+**5. Handle code review feedback**
+
+Code-reviewer returns issue counts only (detailed review written to file).
+
+**If Critical or Important > 0:**
+
+Dispatch subagent for fixes:
+
+```
+description: "Fix issues from Task N review"
+
+prompt: |
+  Read the code review at [REVIEW_FILE].
+
+  Your job is to:
+  1. Fix ALL Critical issues
+  2. Fix ALL Important issues
+  3. Use judgment on Minor issues (fix if easy, else document decision in review file)
+  4. Commit your fixes
+  5. Append to execution log at [execution-log-path]:
+
+     ```markdown
+     ### Code Review Fixes
+     **Review:** [REVIEW_FILE]
+     **Critical:** [count] fixed ([brief categories, e.g., "null pointer, race condition"])
+     **Important:** [count] fixed ([brief categories, e.g., "error handling, type safety"])
+     **Minor:** [fixed count] fixed, [accepted count] accepted
+     **Key changes:** [1-2 sentence summary of main fixes]
+     ```
+
+  6. Report back
+
+  Report back concisely:
+  - Critical issues fixed: [count]
+  - Important issues fixed: [count]
+  - Minor issues: [fixed count / accepted count]
+  - Any issues you couldn't fix (should be none)
+```
+
+**If all counts are 0:**
+
+Skip to step 6 (no fixes needed).
+
+**6. Handle blockers (if any)**
+
+If implementation subagent reported blockers:
+
+**Test failures:**
 - Try alternative implementation approach
 - Try workaround or simplified version
 - If truly stuck: document in log, assess if other tasks can continue
@@ -244,18 +308,19 @@ If subagent reports blockers:
 
 **7. Update execution log**
 
-Append to execution log (see reference/execution-log-format.md):
+Append task summary to execution log (see reference/execution-log-format.md):
 
 ```markdown
 ## Task N: [Name] - [✅/⚠️/❌]
 **Started:** [time] | **Completed:** [time]
 **Status:** [Completed as planned / Adapted / Blocked]
-**Files changed:** [list]
+**Files changed:** [list from implementation subagent]
+**Tests:** [pass/fail counts from implementation subagent]
 **Key decisions:** [if any]
 **Plan deviations:** [if any]
-**Issues fixed:** [counts]
-**Issues documented:** [if any]
 ```
+
+Note: Fix subagent already wrote "Code Review Fixes" section to execution log (if there were issues to fix).
 
 **8. Update state file**
 
