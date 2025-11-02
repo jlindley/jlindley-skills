@@ -418,39 +418,21 @@ If compaction happens mid-execution, the next task iteration will:
 
 **If state file goes missing mid-execution:**
 
-The state file (`.autonomous-execution-state.json`) is untracked by git and can disappear due to:
-- Subagent cleanup operations
-- File system operations
-- Unknown causes
+The state file is untracked by git and can disappear (subagent cleanup, file system operations, unknown causes).
 
-**Recovery procedure:**
+**Recovery:** Recreate from execution log, which is the source of truth.
 
 ```bash
-# Check if state file exists
-if [ ! -f .autonomous-execution-state.json ]; then
-    # Recreate from execution log
-    # Count completed tasks in execution log to determine current_task_number
-    COMPLETED=$(grep -c "^## Task [0-9]*:.*✅" docs/plans/*execution-log.md)
-    CURRENT_TASK=$((COMPLETED + 1))
+# Count completed tasks to determine current position
+COMPLETED=$(grep -c "^## Task [0-9]*:.*✅" docs/plans/*execution-log.md)
+CURRENT_TASK=$((COMPLETED + 1))
 
-    # Recreate state file
-    cat > .autonomous-execution-state.json << EOF
-{
-  "skill": "autonomous-execution",
-  "started_at": "[from execution log header]",
-  "design_doc": "[from execution log]",
-  "implementation_plan": "[from execution log]",
-  "execution_log": "[path to execution log]",
-  "current_task_number": $CURRENT_TASK,
-  "total_tasks": [total from plan],
-  "time_budget_hours": 6,
-  "status": "in_progress"
-}
-EOF
-fi
+# Recreate state file using same format as Setup step 4
+# Extract started_at, design_doc, implementation_plan, execution_log from log header
+# Set current_task_number=$CURRENT_TASK
 ```
 
-**Key insight:** Execution log is the source of truth. State file is just a convenience for tracking. If it disappears, recreate from execution log and continue.
+State file is just a convenience. Execution log is permanent and sufficient to resume.
 
 ## Context Preservation Strategy
 
