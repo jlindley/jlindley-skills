@@ -2,18 +2,19 @@
 description: Full session of documentation cleanup, archiving, and backlog mining
 ---
 
-Comprehensive documentation reorganization focused on maintaining clarity and extracting value before deletion.
+Documentation reorganization that extracts value before deletion.
 
 ## Overview
 
-Similar to what we did in the session where we cleaned up `docs/plans/`:
-1. Propose cleanup strategy
-2. Mine execution reports for backlog items (iterative 1-by-1 review)
-3. Archive valuable design docs
-4. Delete redundant execution artifacts
-5. Commit changes
+Perform comprehensive documentation cleanup:
+1. Scan and categorize documentation (design docs, execution reports, implementation plans, etc.)
+2. Propose cleanup strategy (what to archive vs delete)
+3. Mine execution reports for backlog items (iterative 1-by-1 review)
+4. Archive valuable design docs to `docs/architecture/history/`
+5. Delete redundant execution artifacts (git history preserves them)
+6. Commit changes with summary
 
-This is a **dedicated session** for doc cleanup, not a quick end-of-session task (use `/wrap` for that).
+This is a **dedicated session** for thorough doc cleanup, not a quick end-of-session task (use `/wrap` for that).
 
 ## Process
 
@@ -30,7 +31,7 @@ docs/design/
 ```
 
 **Categorize files:**
-- Design documents (architectural decisions, "why" rationale)
+- Design documents (architectural decisions and rationale)
 - Execution reports (summaries of completed work)
 - Execution logs (detailed task-by-task progress)
 - Implementation plans (detailed task breakdowns)
@@ -46,7 +47,7 @@ docs/design/
 - [List design docs with rationale]
 - Total: X files
 
-### DELETE (Redundant - value in git history)
+### DELETE (Git history preserves value)
 - [List execution artifacts]
 - Total: Y files
 
@@ -154,8 +155,8 @@ docs: Clean up [directory] and archive design docs
   - Total: X files
 
 ## Files Deleted
-- Execution artifacts: Y files (Z KB saved)
-- Redundant with git history
+- Deleted Y execution artifacts (Z KB)
+- Git history preserves them
 
 ## Backlog Items Created
 - B7: [Title] (Priority) - [Source]
@@ -180,23 +181,23 @@ docs: Clean up [directory] and archive design docs
 
 ```bash
 # Interactive full cleanup
-/doc-reorg
+/doc-cleanup
 
 # Focus on specific directory
-/doc-reorg docs/plans/
+/doc-cleanup docs/plans/
 
 # Quick mode (minimal interaction)
-/doc-reorg --quick  # Auto-discard "nice to have" items
+/doc-cleanup --quick  # Auto-discard "nice to have" items
 ```
 
 ## Important Guidelines
 
-- **Propose strategy first** - Don't start deleting without approval
+- **Propose strategy first** - Obtain approval before deleting files
 - **Mine before delete** - Always extract value from execution reports
 - **Iterative review** - Present backlog items one-by-one for decision
-- **Respect user time** - Quick discard decisions are fine, don't belabor
+- **Respect user time** - Accept quick discard decisions and move forward promptly
 - **Commit only docs** - Ignore other working changes in repo
-- **Preserve git history** - Deleted files are still accessible in history
+- **Preserve git history** - Deleted files remain accessible in history
 - **Create archive README** - Help future readers understand archived docs
 
 ## Related Tools & Skills
@@ -209,7 +210,7 @@ docs: Clean up [directory] and archive design docs
 
 ## Example Session Flow
 
-1. User: `/doc-reorg`
+1. User: `/doc-cleanup`
 2. Scan docs/plans/, propose strategy
 3. User: "Looks good"
 4. Mine 3 execution reports, present 8 potential items
