@@ -51,6 +51,10 @@ Execute implementation plans to completion without human intervention, making cr
   ☐ Review task against design doc
   ☐ Adapt plan if needed (update plan file)
   ☐ Dispatch subagent for implementation
+  ☐ VERIFICATION CHECKPOINT
+    ☐ Use Task tool to run all tests in fresh subagent → report pass/fail counts
+    ☐ If tests fail: go back to implementation with failure details
+    ☐ If tests pass → proceed
   ☐ Request code review (dispatch code-reviewer)
   ☐ If Critical/Important issues, dispatch subagent for fixes
   ☐ Handle blockers if any
@@ -192,13 +196,37 @@ prompt: |
 
   Report back concisely:
   - What you implemented (1-2 sentences)
-  - Test results (pass/fail counts)
   - Files changed (list)
   - Any blockers encountered
   - Creative decisions made (if any)
 ```
 
-**4. Request code review**
+**4. VERIFICATION CHECKPOINT**
+
+Use Task tool to run full test suite in fresh subagent:
+
+```
+description: "Verify tests pass"
+
+prompt: |
+  Run the full test suite for this project.
+
+  Find and run the appropriate test command (check README.md, CLAUDE.md, or use standard command for this language).
+
+  Report back:
+  - Pass count: [number]
+  - Fail count: [number]
+  - Full output: [paste if failures > 0]
+```
+
+If fail count > 0:
+- Go back to step 3
+- Include test failure output in implementation subagent prompt
+
+If fail count = 0:
+- Proceed to step 5
+
+**5. Request code review**
 
 Get git SHAs and construct review filename:
 
@@ -267,16 +295,16 @@ fi
 
 If review file missing:
 - Document in execution log: "Code-reviewer failed to create review file (known issue)"
-- Skip step 5 (no review feedback to handle)
-- Proceed to step 6 (Handle blockers)
-  - If implementation reported test failures or blockers, step 6 will handle them
-  - If implementation was successful, step 6 will be a no-op and continue to step 7
+- Skip step 6 (no review feedback to handle)
+- Proceed to step 7 (Handle blockers)
+  - If implementation reported test failures or blockers, step 7 will handle them
+  - If implementation was successful, step 7 will be a no-op and continue to step 8
 
-**5. Handle code review feedback**
+**6. Handle code review feedback**
 
 Code-reviewer returns issue counts only (detailed review written to file).
 
-**Session limit handling:** If code-reviewer hits "Session limit reached", treat as missing review file (step 4a).
+**Session limit handling:** If code-reviewer hits "Session limit reached", treat as missing review file (step 5a).
 
 **If Critical or Important > 0:**
 
@@ -315,9 +343,9 @@ prompt: |
 
 **If all counts are 0:**
 
-Skip to step 6 (no fixes needed).
+Skip to step 7 (no fixes needed).
 
-**6. Handle blockers (if any)**
+**7. Handle blockers (if any)**
 
 If implementation subagent reported blockers:
 
@@ -337,7 +365,7 @@ If implementation subagent reported blockers:
 - Adapt the plan
 - Document reasoning
 
-**7. Update execution log**
+**8. Update execution log**
 
 Append task summary to execution log (see reference/execution-log-format.md):
 
@@ -346,23 +374,23 @@ Append task summary to execution log (see reference/execution-log-format.md):
 **Started:** [time] | **Completed:** [time]
 **Status:** [Completed as planned / Adapted / Blocked]
 **Files changed:** [list from implementation subagent]
-**Tests:** [pass/fail counts from implementation subagent]
+**Verification of full test suite:** [X passed, Y failed]
 **Key decisions:** [if any]
 **Plan deviations:** [if any]
 ```
 
 Note: Fix subagent already wrote "Code Review Fixes" section to execution log (if there were issues to fix).
 
-**8. Update state file**
+**9. Update state file**
 
 Update `current_task_number` in state file. Increment.
 
-**9. Commit and mark complete**
+**10. Commit and mark complete**
 
 - Commit all work from this task:
   - Implementation changes (from step 3)
-  - Code review file (from step 4, if it exists)
-  - Code review fixes (from step 5, if any)
+  - Code review file (from step 5, if it exists)
+  - Code review fixes (from step 6, if any)
 - Verify review file is committed: `git status docs/reviews/` should show no untracked files
 - Mark **this high-level task** completed in TodoWrite (e.g., "Task 1: Add timezone tests")
   - Note: Granular subtasks get marked as you go; this is the final task-level completion
@@ -489,6 +517,9 @@ A: Wait up to 5 minutes. If it hasn't returned, treat as missing review file (st
 | "Final report can be any format" | Users need task matrix at end for quick scanning when returning |
 | "State file is overhead" | State file enables resume after interruption/compaction |
 | "I'll create execution log later" | Execution log provides cross-subagent context during execution |
+| "Tests passing is obvious" | Run full test suite, paste output. No claims without evidence. |
+| "Verification slows us down" | 30 seconds prevents hours debugging false completion claims |
+| "I ran some tests manually" | Full test suite required, not selective testing |
 
 ## Red Flags
 
@@ -499,6 +530,7 @@ A: Wait up to 5 minutes. If it hasn't returned, treat as missing review file (st
 - Reading code files in main agent
 - Following plan blindly when it conflicts with design
 - **Asking for permission when design conflicts with plan**
+- **Skipping verification checkpoint or claiming tests pass without running them**
 - Running without time awareness
 - Writing narrative-only final report
 - **Adding content after task completion matrix**
