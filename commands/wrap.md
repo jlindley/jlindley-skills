@@ -36,25 +36,34 @@ Run the same analysis as `/grade`:
 
 ### 3. Backlog Item Suggestions (5-10 minutes)
 
-Present potential backlog items **one at a time** for user decision:
+**Mine the current session only** for potential backlog items:
+- TODOs or deferred work mentioned in conversation
+- Features discussed but not implemented
+- Issues discovered but not fixed
+- Future enhancements noted in docs created this session
+- Code comments like "TODO:", "FIXME:", "NotImplementedError"
+
+**DO NOT load existing backlog items** - that's a rabbit hole. Only look at this session's work.
+
+**If items found**, present **one at a time** for user decision:
 
 ```
 ## Potential Item X of Y: [Title]
 
-**Source:** [filename:line]
+**Source:** [Current session context or filename:line if from new code]
 **Context:** [Why this was deferred/recommended]
-**Evidence:** [Data supporting this, e.g., "5 media groups in DB"]
+**Evidence:** [Data supporting this, e.g., "mentioned in conversation", "TODO comment in new code"]
 
 **Proposed Priority:** [High/Medium/Low with rationale]
 
 **Action needed:** Add to backlog / Modify / Discard?
 ```
 
+**If no items found**, simply state: "No new backlog items identified from this session."
+
 For each "Add to backlog":
 - Use `backlog-management` skill to create properly formatted issues
-- Generate B-number with `issue --new-id` command
 - Include source reference in "Related" section
-- Can also use `issue --list` to check for duplicates
 
 ### 4. Unaddressed Issues Scan (3-5 minutes)
 
@@ -126,7 +135,5 @@ For each "Add to backlog":
 ## Related Tools & Skills
 
 - **Skill:** `backlog-management` - For creating properly formatted backlog items
-- **Command:** `issue --new-id` - Generate next B-number
-- **Command:** `issue --list` - Check existing backlog for duplicates
 - **Command:** `/grade` - Session grading component (already integrated)
-- **Command:** `/doc-reorg` - For more thorough doc cleanup (reference if needed)
+- **Command:** `/doc-cleanup` - For more thorough doc cleanup (reference if needed)
