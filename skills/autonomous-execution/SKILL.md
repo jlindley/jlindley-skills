@@ -2,7 +2,8 @@
 name: autonomous-execution
 description: Use when executing implementation plans or backlog items autonomously over multiple hours without human intervention, when you need to work overnight or during extended periods - executes work to completion with creative decision-making, context preservation, state management for resume capability, and comprehensive reporting
 tested_models:
-  - claude-sonnet-4-5-20250929
+  - claude-sonnet-4-5-20250929  # Primary model, extensively tested
+  # Note: Not tested on Haiku or Opus - complex autonomous workflows may require Sonnet-level capabilities
 ---
 
 # Autonomous Execution
@@ -48,8 +49,8 @@ Execute implementation plans or backlog items to completion without human interv
   ☐ Verify dedicated worktree (not main branch)
   ☐ Read design doc, understand WHY
   ☐ Read implementation plan
-  ☐ Create state file (.autonomous-execution-state.json)
-  ☐ Create execution log (docs/plans/YYYY-MM-DD-feature-execution-log.md)
+  ☐ Create state file (tmp/.autonomous-execution-state.json)
+  ☐ Create execution log (tmp/execution-log.md)
   ☐ Create TodoWrite with all tasks
 
 ☐ For each task (main loop)
@@ -57,12 +58,14 @@ Execute implementation plans or backlog items to completion without human interv
   ☐ Review task against design doc
   ☐ Adapt plan if needed (update plan file)
   ☐ Dispatch subagent for implementation
-  ☐ VERIFICATION CHECKPOINT
-    ☐ Use Task tool to run all tests in fresh subagent → report pass/fail counts
-    ☐ If tests fail: go back to implementation with failure details
-    ☐ If tests pass → proceed
-  ☐ Request code review (dispatch code-reviewer)
-  ☐ If Critical/Important issues, dispatch subagent for fixes
+  ☐ VERIFICATION, INTEGRATION & CODE REVIEW CHECKPOINT
+    ☐ Dispatch subagent to verify FOUR things:
+      1. Tests pass (isolation)
+      2. Integration (connects to previous/future tasks, dependencies exist)
+      3. Completeness (handles errors/edge cases, not just happy path)
+      4. Code review (write review file if issues found)
+    ☐ If ANY fail: go back to implementation with feedback
+    ☐ If all pass → proceed to handle blockers
   ☐ Handle blockers if any
   ☐ Update execution log
   ☐ Update state file
@@ -70,8 +73,9 @@ Execute implementation plans or backlog items to completion without human interv
   ☐ Ensure work is committed
 
 ☐ Completion
-  ☐ Write final report (narrative + task matrix)
-  ☐ Commit execution log + report
+  ☐ Write final report (read tmp/execution-log.md for context)
+  ☐ Commit final report only (tmp/ stays gitignored)
+  ☐ Clean up tmp/
   ☐ Delete state file
 ```
 
@@ -83,7 +87,7 @@ Execute implementation plans or backlog items to completion without human interv
 
 This skill supports two workflows:
 1. **Implementation plans** (full design doc + detailed plan) - follow steps 1-6 below
-2. **Backlog items** (single file with Problem + Proposed Solution) - see "Backlog Item Workflow" section below, then skip to step 7
+2. **Backlog items** (single file with Problem + Proposed Solution) - see "Backlog Item Workflow" section below, then skip to step 5
 
 **Backlog Item Workflow**
 
@@ -102,9 +106,9 @@ If working from a backlog item (e.g., `docs/backlog/B10-feature.md`):
    - If solution lists multiple steps: Create task per step
    - Create TodoWrite with all tasks
 5. Create state file (step 4 below) using backlog item path for both docs
-6. Skip to step 7 (execution log creation uses backlog item path)
+6. Skip to step 5 (execution log creation uses backlog item path)
 
-Continue with standard workflow from step 7 onward.
+Continue with standard workflow from step 5 onward.
 
 **Standard Implementation Plan Workflow**
 
@@ -136,7 +140,7 @@ If plan header says "REQUIRED SUB-SKILL: Use superpowers:executing-plans", updat
 
 **4. Create state file**
 
-Create `.autonomous-execution-state.json`:
+Create `tmp/.autonomous-execution-state.json`:
 
 ```json
 {
@@ -144,7 +148,7 @@ Create `.autonomous-execution-state.json`:
   "started_at": "2025-11-01T10:00:00Z",
   "design_doc": "docs/plans/YYYY-MM-DD-feature-design.md",
   "implementation_plan": "docs/plans/YYYY-MM-DD-feature-implementation.md",
-  "execution_log": "docs/plans/YYYY-MM-DD-feature-execution-log.md",
+  "execution_log": "tmp/execution-log.md",
   "current_task_number": 1,
   "total_tasks": 12,
   "time_budget_hours": 6,
@@ -156,7 +160,7 @@ See reference/state-file-format.md for full schema.
 
 **5. Create execution log**
 
-Create `docs/plans/YYYY-MM-DD-feature-execution-log.md`:
+Create `tmp/execution-log.md`:
 
 ```markdown
 # Execution Log: [Feature Name]
@@ -173,6 +177,8 @@ Create `docs/plans/YYYY-MM-DD-feature-execution-log.md`:
 For backlog items, both Design Doc and Implementation Plan point to the same backlog item file.
 
 See reference/execution-log-format.md for detailed structure.
+
+**Note:** Execution log is in tmp/ (working notes during execution). Final report will be the permanent deliverable.
 
 **6. Announce start**
 
@@ -209,7 +215,9 @@ If task needs adaptation:
 
 **3. Dispatch subagent for implementation**
 
-Use Task tool with general-purpose agent:
+Use Task tool with general-purpose agent.
+
+**For initial implementation:**
 
 ```
 description: "Implement Task N: [task name]"
@@ -223,13 +231,11 @@ prompt: |
   3. Commit your work
   4. Report back
 
-  Context documents (read both for full context):
-  - Design doc (WHY): [design-doc-path] - Read the full design doc to understand intent and constraints
-  - Execution log (prior decisions): [execution-log-path] - See what decisions were made in earlier tasks
+  Context documents:
+  - Design doc (WHY): [design-doc-path]
+  - Execution log (prior decisions): tmp/execution-log.md
 
   Work autonomously. If you encounter problems, use your judgment to resolve them.
-
-  When you make creative decisions, note them in your report (main agent will document in execution log).
 
   Report back concisely:
   - What you implemented (1-2 sentences)
@@ -238,151 +244,178 @@ prompt: |
   - Creative decisions made (if any)
 ```
 
-**4. VERIFICATION CHECKPOINT**
-
-Use Task tool to run full test suite in fresh subagent:
+**When looping back from verification failures:**
 
 ```
-description: "Verify tests pass"
+description: "Fix issues in Task N: [task name]"
 
 prompt: |
-  Run the full test suite for this project.
+  You are fixing issues found in Task N from [implementation-plan-path].
 
-  Find and run the appropriate test command (check README.md, CLAUDE.md, or use standard command for this language).
+  Read the verification feedback at [REVIEW_FILE] (in tmp/)
 
-  Report back:
-  - Pass count: [number]
-  - Fail count: [number]
-  - Full output: [paste if failures > 0]
-```
-
-If fail count > 0:
-- Go back to step 3
-- Include test failure output in implementation subagent prompt
-
-If fail count = 0:
-- Proceed to step 5
-
-**5. Request code review**
-
-Get git SHAs and construct review filename:
-
-```bash
-# Simple approach: compare current commit to previous
-BASE_SHA=$(git rev-parse HEAD^)  # Previous commit (before implementation)
-HEAD_SHA=$(git rev-parse HEAD)   # Current commit (after implementation)
-
-# Derive review filename from plan path
-# Example: docs/plans/2025-11-01-fix-timezone-handling.md
-# → docs/reviews/2025-11-01-fix-timezone-handling-task-N-review.md
-PLAN_FILE="[implementation-plan-path]"
-PLAN_NAME=$(basename "$PLAN_FILE" .md)
-REVIEW_FILE="docs/reviews/${PLAN_NAME}-task-N-review.md"
-```
-
-**Note:** If implementation subagent made multiple commits, consider using the SHA from before the task started (tracked in execution log or state file).
-
-Dispatch code-reviewer subagent:
-
-```
-description: "Review Task N: [task name]"
-subagent_type: superpowers:code-reviewer
-
-prompt: |
-  Review the implementation of Task N from [implementation-plan-path].
-
-  What was implemented: [summary from implementation subagent]
-  Requirements: Task N in [implementation-plan-path]
-  Base SHA: [BASE_SHA]
-  Head SHA: [HEAD_SHA]
-
-  **MANDATORY FILE WRITING REQUIREMENT:**
-  You MUST write a complete review to [REVIEW_FILE] before reporting back.
-  This is REQUIRED even if the code is perfect (write "No issues found").
-  Do NOT skip file writing to "be concise" - the file is the deliverable.
-
-  Review the changes and:
-  1. Write detailed review to [REVIEW_FILE] with:
-     - Strengths
-     - Critical issues (bugs, security, correctness)
-     - Important issues (architecture, maintainability)
-     - Minor issues (style, naming, comments)
-     - Assessment
-  2. After writing the file, report back with ONLY counts (not details)
-
-  Report back:
-  - Review file: [REVIEW_FILE]
-  - Critical: [count]
-  - Important: [count]
-  - Minor: [count]
-```
-
-**4a. Verify review file exists**
-
-**CRITICAL:** Code-reviewer subagents sometimes report creating files that don't actually exist.
-
-```bash
-# Immediately verify the review file was created
-if [ ! -f "$REVIEW_FILE" ]; then
-    # File doesn't exist - code-reviewer failed silently
-    # Document in execution log and proceed without review
-    echo "⚠️ Code-reviewer did not create review file, proceeding without formal review"
-fi
-```
-
-If review file missing:
-- Document in execution log: "Code-reviewer failed to create review file (known issue)"
-- Skip step 6 (no review feedback to handle)
-- Proceed to step 7 (Handle blockers)
-  - If implementation reported test failures or blockers, step 7 will handle them
-  - If implementation was successful, step 7 will be a no-op and continue to step 8
-
-**6. Handle code review feedback**
-
-Code-reviewer returns issue counts only (detailed review written to file).
-
-**Session limit handling:** If code-reviewer hits "Session limit reached", treat as missing review file (step 5a).
-
-**If Critical or Important > 0:**
-
-Dispatch subagent for fixes:
-
-```
-description: "Fix issues from Task N review"
-
-prompt: |
-  Read the code review at [REVIEW_FILE].
+  This file contains ALL issues found:
+  - Test failures (if any)
+  - Integration gaps (if any)
+  - Completeness issues (if any)
+  - Code review issues (if any)
 
   Your job is to:
-  1. Fix ALL Critical issues
-  2. Fix ALL Important issues
-  3. Use judgment on Minor issues (fix if easy, else document decision in review file)
+  1. Fix ALL issues listed in the feedback file
+  2. Prioritize: tests first, then integration, then completeness, then code review issues
+  3. Follow TDD if adding new code
   4. Commit your fixes
-  5. Append to execution log at [execution-log-path]:
+  5. Append to execution log at tmp/execution-log.md:
 
-     ```markdown
-     ### Code Review Fixes
-     **Review:** [REVIEW_FILE]
-     **Critical:** [count] fixed ([brief categories, e.g., "null pointer, race condition"])
-     **Important:** [count] fixed ([brief categories, e.g., "error handling, type safety"])
-     **Minor:** [fixed count] fixed, [accepted count] accepted
-     **Key changes:** [1-2 sentence summary of main fixes]
-     ```
+     ### Verification Fixes
+     **Feedback:** [REVIEW_FILE]
+     **Tests:** [fixed if failed]
+     **Integration:** [fixed if gap found]
+     **Completeness:** [fixed if incomplete]
+     **Code review:** Critical: [count] fixed, Important: [count] fixed, Minor: [fixed/accepted]
+     **Key changes:** [1-2 sentence summary]
 
-  6. Report back
+  Context documents:
+  - Design doc (WHY): [design-doc-path]
+  - Execution log (prior decisions): tmp/execution-log.md
 
   Report back concisely:
-  - Critical issues fixed: [count]
-  - Important issues fixed: [count]
-  - Minor issues: [fixed count / accepted count]
+  - What you fixed (1-2 sentences)
+  - Files changed (list)
   - Any issues you couldn't fix (should be none)
 ```
 
-**If all counts are 0:**
+**4. VERIFICATION, INTEGRATION & CODE REVIEW CHECKPOINT**
 
-Skip to step 7 (no fixes needed).
+First, compute git SHAs and review file path:
 
-**7. Handle blockers (if any)**
+```bash
+BASE_SHA=$(git rev-parse HEAD^)  # Previous commit (before implementation)
+HEAD_SHA=$(git rev-parse HEAD)   # Current commit (after implementation)
+
+# Review file in tmp/ (ephemeral, not committed)
+mkdir -p tmp
+REVIEW_FILE="tmp/task-N-review.md"
+```
+
+Then dispatch verification subagent:
+
+```
+description: "Verify implementation (tests + integration + completeness + code review)"
+
+prompt: |
+  You're verifying the implementation of Task N from [implementation-plan-path].
+
+  What was implemented: [summary from implementation subagent]
+
+  Context documents:
+  - Design doc (WHY): [design-doc-path]
+  - Execution log (prior tasks): [execution-log-path]
+  - Implementation plan (future tasks): [implementation-plan-path]
+
+  Git context:
+  - Base SHA: [BASE_SHA]
+  - Head SHA: [HEAD_SHA]
+  - Review file: [REVIEW_FILE]
+
+  Your job is to verify FOUR things:
+
+  **1. TESTS PASS (Isolation)**
+
+  Run the full test suite for this project.
+  Find and run the appropriate test command (check README.md, CLAUDE.md, or use standard command for this language).
+
+  Report:
+  - Pass count: [number]
+  - Fail count: [number]
+  - Full output: [paste if failures > 0]
+
+  **2. INTEGRATION (Connections)**
+
+  Read the code that was just written. Trace end-to-end execution:
+
+  ☐ Could you demo what exists? If you ran the feature right now, would it do something useful?
+  ☐ Trace the flow: input → processing → output (including error cases)
+  ☐ Does code from THIS task call code from PREVIOUS tasks? (check execution log for prior work)
+  ☐ Does code from FUTURE tasks depend on something? Is it actually present? (check implementation plan)
+  ☐ Are there assumptions about what exists (columns, functions, services)? Verify they're true.
+
+  Report:
+  - Integration status: [PASS / GAP FOUND]
+  - If GAP FOUND: Describe the specific missing connection or dependency
+
+  **3. COMPLETENESS (Error handling)**
+
+  Does it handle the full problem space (errors, edge cases, bad input) or just the happy path?
+
+  Report:
+  - Completeness: [COMPLETE / HAPPY-PATH-ONLY]
+  - If HAPPY-PATH-ONLY: List missing error handling (network failures, invalid input, edge cases, etc.)
+
+  **4. CODE REVIEW (Quality)**
+
+  Review the implementation for code quality:
+
+  ☐ Compare against task requirements from [implementation-plan-path] Task N
+    - Does it implement what was specified?
+    - Any missing pieces from the task description?
+
+  ☐ Check git diff to see what changed:
+    git diff [BASE_SHA] [HEAD_SHA]
+
+  ☐ Review changes for:
+    - Critical issues (bugs, security, correctness)
+    - Important issues (architecture, maintainability, performance)
+    - Minor issues (style, naming, comments)
+
+  **FEEDBACK FILE:**
+
+  If ANY of the four checks fail (tests, integration, completeness, or code review), write comprehensive feedback to [REVIEW_FILE]:
+
+  ```markdown
+  # Verification Feedback: Task N
+
+  ## Tests
+  [PASS / FAIL]
+  - Pass count: [number]
+  - Fail count: [number]
+  - Failures: [paste full output if any]
+
+  ## Integration
+  [PASS / GAP FOUND]
+  - Description: [specific missing connections or dependencies]
+
+  ## Completeness
+  [COMPLETE / INCOMPLETE]
+  - Missing: [error handling, edge cases, invalid input scenarios]
+
+  ## Code Review
+  [NO ISSUES / ISSUES FOUND]
+  - Critical: [count] - [specific examples with line numbers]
+  - Important: [count] - [specific examples with line numbers]
+  - Minor: [count] - [specific examples with line numbers]
+
+  ## What to Fix
+  [Prioritized list of what needs to be addressed]
+  ```
+
+  Report back:
+  - Tests: [pass count] passed, [fail count] failed
+  - Integration: [PASS / GAP FOUND]
+  - Completeness: [COMPLETE / INCOMPLETE]
+  - Code review: [NO ISSUES / ISSUES FOUND]
+  - Feedback file: [REVIEW_FILE] (if ANY failures)
+```
+
+**If ANY of the four checks fail:**
+- Feedback written to [REVIEW_FILE]
+- Go back to step 3 (implementation)
+- Step 3 reads [REVIEW_FILE] for all issues to fix
+
+**If all four checks pass:**
+- Proceed to step 5 (Handle blockers)
+
+**5. Handle blockers (if any)**
 
 If implementation subagent reported blockers:
 
@@ -402,9 +435,9 @@ If implementation subagent reported blockers:
 - Adapt the plan
 - Document reasoning
 
-**8. Update execution log**
+**6. Update execution log**
 
-Append task summary to execution log (see reference/execution-log-format.md):
+Append task summary to tmp/execution-log.md (see reference/execution-log-format.md):
 
 ```markdown
 ## Task N: [Name] - [✅/⚠️/❌]
@@ -416,19 +449,18 @@ Append task summary to execution log (see reference/execution-log-format.md):
 **Plan deviations:** [if any]
 ```
 
-Note: Fix subagent already wrote "Code Review Fixes" section to execution log (if there were issues to fix).
+Note: If code review found issues, implementation subagent already wrote "Code Review Fixes" section to execution log.
 
-**9. Update state file**
+**7. Update state file**
 
-Update `current_task_number` in state file. Increment.
+Update `current_task_number` in tmp/.autonomous-execution-state.json. Increment.
 
-**10. Commit and mark complete**
+**8. Commit and mark complete**
 
 - Commit all work from this task:
   - Implementation changes (from step 3)
-  - Code review file (from step 5, if it exists)
-  - Code review fixes (from step 6, if any)
-- Verify review file is committed: `git status docs/reviews/` should show no untracked files
+  - Code review fixes (looped back through step 3, if any)
+  - Note: Review files are in tmp/ (gitignored, ephemeral)
 - Mark **this high-level task** completed in TodoWrite (e.g., "Task 1: Add timezone tests")
   - Note: Granular subtasks get marked as you go; this is the final task-level completion
 - Continue to next task
@@ -439,7 +471,9 @@ When all tasks complete OR time budget reached:
 
 **1. Write final report**
 
-Create `docs/plans/YYYY-MM-DD-feature-execution-report.md`
+Create `docs/plans/YYYY-MM-DD-feature-final-report.md`
+
+Read tmp/execution-log.md for context on what happened.
 
 See reference/final-report-template.md for full structure.
 
@@ -453,20 +487,21 @@ See reference/final-report-template.md for full structure.
 **2. Commit and cleanup**
 
 ```bash
-git add docs/plans/*execution-report.md docs/plans/*execution-log.md
-git commit -m "docs: autonomous execution report for [feature]"
+# Commit final report (the permanent deliverable)
+git add docs/plans/*-final-report.md
+git commit -m "docs: autonomous execution final report for [feature]"
 
-# Clean up state file
-rm .autonomous-execution-state.json
+# Clean up tmp/ (execution log, state file, review files)
+rm -rf tmp/
 ```
 
 ## Resume Capability
 
-**If you are reading this skill and find `.autonomous-execution-state.json`:**
+**If you are reading this skill and find `tmp/.autonomous-execution-state.json`:**
 
 1. You are resuming autonomous execution (after interruption or compaction)
 2. Read state file to understand where you are
-3. Read execution log to understand what's been completed
+3. Read tmp/execution-log.md to understand what's been completed
 4. Read current implementation plan (may have been adapted)
 5. Continue from `current_task_number`
 6. DO NOT restart from task 1
@@ -475,7 +510,7 @@ rm .autonomous-execution-state.json
 **Compaction resilience:**
 
 If compaction happens mid-execution, the next task iteration will:
-- Check state file exists
+- Check tmp/.autonomous-execution-state.json exists
 - Realize "I'm in autonomous-execution mode"
 - Resume from current task
 - Continue normally
@@ -484,28 +519,29 @@ If compaction happens mid-execution, the next task iteration will:
 
 **If state file goes missing mid-execution:**
 
-The state file is untracked by git and can disappear (subagent cleanup, file system operations, unknown causes).
+The state file is in tmp/ and can disappear.
 
-**Recovery:** Recreate from execution log, which is the source of truth.
+**Recovery:** Recreate from execution log.
 
 ```bash
 # Count completed tasks to determine current position
-COMPLETED=$(grep -c "^## Task [0-9]*:.*✅" docs/plans/*execution-log.md)
+COMPLETED=$(grep -c "^## Task [0-9]*:.*✅" tmp/execution-log.md)
 CURRENT_TASK=$((COMPLETED + 1))
 
 # Recreate state file using same format as Setup step 4
-# Extract started_at, design_doc, implementation_plan, execution_log from log header
+# Extract started_at, design_doc, implementation_plan from log header
 # Set current_task_number=$CURRENT_TASK
+# Set execution_log="tmp/execution-log.md"
 ```
 
-State file is just a convenience. Execution log is permanent and sufficient to resume.
+State file is just a convenience. Execution log is sufficient to resume.
 
 ## Context Preservation Strategy
 
 **Main agent (autonomous-execution) should ONLY:**
 - Hold design document understanding (initial read, summarize in execution log)
 - Hold current implementation plan (file path, updated as needed)
-- Hold execution log file path (append summaries, don't hold full content)
+- Hold execution log file path (tmp/execution-log.md - append summaries, don't hold full content)
 - Manage TodoWrite
 - Track time
 
@@ -517,26 +553,25 @@ State file is just a convenience. Execution log is permanent and sufficient to r
 
 **Subagents get fresh context each time:**
 - Can read full design doc (no context cost to main agent)
-- Can read full execution log (for prior task context)
+- Can read tmp/execution-log.md (for prior task context)
 - Can read implementation plan (for their specific task)
 - Can read/write code files freely
 - Should read deeply to understand WHY and make informed decisions
 
 **Why:** Multi-hour execution needs aggressive context preservation FOR THE MAIN AGENT. Subagents have fresh context, so let them read everything they need.
 
+**Note:** All working files (state, execution log, review files) in tmp/ - only final report is committed.
+
 ## Common Questions
 
 **Q: When do I mark a task complete in TodoWrite?**
-A: In step 9, mark the **high-level implementation plan task** complete (e.g., "Task 1: Add timezone tests"). This happens AFTER all work is committed. TodoWrite may have many granular subtasks during implementation - those get marked as you go. But the main task completion happens in step 9 after commit verification.
+A: In step 8, mark the **high-level implementation plan task** complete (e.g., "Task 1: Add timezone tests"). This happens AFTER all work is committed. TodoWrite may have many granular subtasks during implementation - those get marked as you go. But the main task completion happens in step 8 after commit verification.
 
 **Q: What if the implementation plan is at the repo root, not in the worktree?**
 A: That's fine. Plan files can be anywhere in the repo. Just use the correct path when referencing it (e.g., `../../docs/plans/plan.md` from worktree, or absolute path).
 
 **Q: How much detail for "creative decisions"?**
 A: Document significant departures from the plan - changed approaches, workarounds for blockers, schema fixes, etc. Skip minor tweaks (variable renames, comment improvements). If you had to think hard about it, document it.
-
-**Q: What if code-reviewer takes too long or times out?**
-A: Wait up to 5 minutes. If it hasn't returned, treat as missing review file (step 4a) and continue.
 
 ## Common Rationalizations
 
@@ -552,11 +587,17 @@ A: Wait up to 5 minutes. If it hasn't returned, treat as missing review file (st
 | "More information in report is better" | Matrix IS the summary. Nothing after legend line. |
 | "Table formatting doesn't matter" | Misaligned columns make matrix hard to scan. Use fixed-width task names. |
 | "Final report can be any format" | Users need task matrix at end for quick scanning when returning |
-| "State file is overhead" | State file enables resume after interruption/compaction |
-| "I'll create execution log later" | Execution log provides cross-subagent context during execution |
+| "State file is overhead" | State file enables resume after interruption/compaction. Lives in tmp/. |
+| "I'll create execution log later" | Execution log provides cross-subagent context during execution. Lives in tmp/. |
+| "Execution log should be committed" | Only final report is committed. Execution log is working notes in tmp/. |
 | "Tests passing is obvious" | Run full test suite, paste output. No claims without evidence. |
-| "Verification slows us down" | 30 seconds prevents hours debugging false completion claims |
+| "Verification slows us down" | 2 minutes of verification prevents hours debugging false completion claims |
 | "I ran some tests manually" | Full test suite required, not selective testing |
+| "Tests pass so the task is done" | Tests prove code works in isolation. Also need integration and completeness verification. |
+| "I'll check integration at the end" | Integration gaps compound. Check after EVERY task. |
+| "The next task will connect these pieces" | If pieces aren't connected now, explicitly add a task to connect them. Don't assume it'll happen. |
+| "Error handling can be added later" | Completeness verification catches this NOW. Don't defer error handling to future tasks. |
+| "It's just a happy path implementation" | Verification requires full problem space coverage: errors, edge cases, invalid input. |
 
 ## Red Flags
 
@@ -568,6 +609,11 @@ A: Wait up to 5 minutes. If it hasn't returned, treat as missing review file (st
 - Following plan blindly when it conflicts with design
 - **Asking for permission when design conflicts with plan**
 - **Skipping verification checkpoint or claiming tests pass without running them**
+- Marking a task complete when tests pass but you can't trace execution through it
+- Assuming "the next task" will make disconnected pieces work together
+- Not verifying integration after EVERY task
+- Skipping completeness check ("we'll add error handling later")
+- Accepting happy-path-only implementations
 - Running without time awareness
 - Writing narrative-only final report
 - **Adding content after task completion matrix**
