@@ -1,6 +1,6 @@
 ---
 name: autonomous-execution
-description: Use when executing implementation plans autonomously over multiple hours without human intervention, when you need to work overnight or during extended periods - executes plans to completion with creative decision-making, context preservation, state management for resume capability, and comprehensive reporting
+description: Use when executing implementation plans or backlog items autonomously over multiple hours without human intervention, when you need to work overnight or during extended periods - executes work to completion with creative decision-making, context preservation, state management for resume capability, and comprehensive reporting
 tested_models:
   - claude-sonnet-4-5-20250929
 ---
@@ -9,16 +9,17 @@ tested_models:
 
 ## Overview
 
-Execute implementation plans to completion without human intervention, making creative decisions to maintain forward progress while respecting design intent.
+Execute implementation plans or backlog items to completion without human intervention, making creative decisions to maintain forward progress while respecting design intent.
 
 **Core principle:** Trust the design (WHY), adapt the plan (HOW), preserve context through subagents, maintain state for resume capability.
 
-**Announce at start:** "I'm using the autonomous-execution skill to implement this plan."
+**Announce at start:** "I'm using the autonomous-execution skill to implement this plan/backlog item."
 
 ## When to Use
 
 **Use when:**
-- Executing plan over multiple hours (overnight, extended sessions)
+- Executing implementation plan over multiple hours (overnight, extended sessions)
+- Executing backlog item autonomously without human supervision
 - Need autonomous creative decision-making when blocked
 - Want resume capability after interruption or compaction
 - Need context-efficient execution for long-running work
@@ -27,13 +28,18 @@ Execute implementation plans to completion without human intervention, making cr
 - Plan needs human review checkpoints (use executing-plans)
 - Quick execution in current session (use subagent-driven-development directly)
 - Plan needs major revision (use brainstorming first)
+- Backlog item is trivial (< 30 minutes - just do it directly)
 
 ## Prerequisites
 
-**REQUIRED:**
+**For implementation plans:**
 - Dedicated worktree (use using-git-worktrees skill)
 - Design document (the WHY - describes desired outcome and value)
 - Implementation plan (the HOW - detailed tasks from writing-plans)
+
+**For backlog items:**
+- Dedicated worktree (use using-git-worktrees skill OR project setup script)
+- Backlog item file (contains both WHY in Problem section and HOW in Proposed Solution section)
 
 ## Quick Reference: Execution Checklist
 
@@ -72,6 +78,35 @@ Execute implementation plans to completion without human intervention, making cr
 ## The Process
 
 ### Setup Phase
+
+**IMPORTANT: Backlog items vs Implementation plans**
+
+This skill supports two workflows:
+1. **Implementation plans** (full design doc + detailed plan) - follow steps 1-6 below
+2. **Backlog items** (single file with Problem + Proposed Solution) - see "Backlog Item Workflow" section below, then skip to step 7
+
+**Backlog Item Workflow**
+
+If working from a backlog item (e.g., `docs/backlog/B10-feature.md`):
+
+1. Verify worktree isolation (step 1 below)
+2. Read backlog item file:
+   - **Problem section** = design/WHY
+   - **Proposed Solution section** = lightweight implementation plan/HOW
+   - **Related section** = context/references
+3. Treat backlog item as BOTH design doc AND implementation plan:
+   - Set `design_doc` = backlog item path
+   - Set `implementation_plan` = backlog item path (same file)
+4. Extract tasks from Proposed Solution section:
+   - If solution is single-step: Create 1 task
+   - If solution lists multiple steps: Create task per step
+   - Create TodoWrite with all tasks
+5. Create state file (step 4 below) using backlog item path for both docs
+6. Skip to step 7 (execution log creation uses backlog item path)
+
+Continue with standard workflow from step 7 onward.
+
+**Standard Implementation Plan Workflow**
 
 **1. Verify worktree isolation**
 
@@ -127,13 +162,15 @@ Create `docs/plans/YYYY-MM-DD-feature-execution-log.md`:
 # Execution Log: [Feature Name]
 
 **Started:** [timestamp]
-**Design Doc:** [path]
-**Implementation Plan:** [path]
+**Design Doc:** [path or backlog item path]
+**Implementation Plan:** [path or backlog item path - same as design doc for backlog items]
 **Time Budget:** 6 hours
 
 ## Task 1: [Name] - [STATUS]
 [Will be filled during execution]
 ```
+
+For backlog items, both Design Doc and Implementation Plan point to the same backlog item file.
 
 See reference/execution-log-format.md for detailed structure.
 
