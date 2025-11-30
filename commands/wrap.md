@@ -41,69 +41,88 @@ Complete end-of-session cleanup and analysis focusing on insights and loose ends
 
 ### 3. Present Selections for Follow-Up (1 interaction)
 
-Use `AskUserQuestion` tool with `multiSelect: true` for THREE sections.
+Use `AskUserQuestion` tool with `multiSelect: true` for up to THREE separate questions (one per category). The tool allows up to 4 questions, each with up to 4 options.
 
-**Present all insights and loose ends as checkboxes:**
+**Tool constraints:**
+- Maximum 4 questions per AskUserQuestion call
+- Maximum 4 options per question
+- If a category has more than 4 items, prioritize the top 4 by importance/risk
+
+**CRITICAL: Option labels must clearly indicate what happens when selected:**
+
+- **Discuss items** (insights, complex loose ends) → Will pause for drill-down conversation
+  - Label format: `"Discuss: [topic]"` or `"Explore: [topic]"`
+
+- **Action items** (simple fixes, cleanup) → Will just execute and move on
+  - Label format: `"Fix: [what]"` or `"Clean: [what]"` or `"Delete: [what]"`
+
+The user should never be surprised by whether an item will pause for input or just execute.
+
+**Structure as 2-3 multi-select questions:**
 
 ```
-Which items would you like to explore further?
+Question 1 - Insights (multiSelect: true):
+[ ] Discuss: Panel workflow effectiveness
+[ ] Discuss: Voice consistency patterns
+[ ] Explore: Worksheet as escape hatch for density
 
-Section 1 - Session Insights:
-[ ] Insight 1 text
-[ ] Insight 2 text
-[ ] Insight 3 text
-
-Section 2 - Meta Insights:
-[ ] Meta insight 1 text
-[ ] Meta insight 2 text
-[ ] Meta insight 3 text
-
-Section 3 - Loose Ends:
-[ ] Loose end 1 text
-[ ] Loose end 2 text
-[ ] Loose end 3 text
+Question 2 - Loose Ends (multiSelect: true):
+[ ] Delete: stale tmp/ reports from earlier session
+[ ] Fix: checked box in active TODO list
+[ ] Discuss: unaddressed modified scripts (complex decision)
 ```
 
-User checks items they want to follow up on, submits once.
+User checks items across all questions, submits once.
 
 ### 4. Iterate Through Selected Items (1-by-1)
 
-For each checked item in order (session insights → meta insights → loose ends):
+For each checked item in order, handle based on its prefix:
 
-**For session/meta insights:**
+---
+
+**Action items (Fix:/Delete:/Clean:) → Execute immediately, no pause:**
+
+Just do the thing and report briefly:
 ```
-## Following up: [Insight text]
+✓ Deleted stale tmp/ reports (3 files removed)
+✓ Fixed checked box — converted to "Model script" reference
+```
+
+Move on to next item without asking for input.
+
+---
+
+**Discuss items (Discuss:/Explore:) → Pause for drill-down:**
+
+**For insights:**
+```
+## Discussing: [Insight text]
 
 **Why this matters:** [Elaboration on the insight]
 **How to apply:** [Concrete suggestions for future sessions]
 **Related patterns:** [Connections to other practices/skills]
 
-**Capture this?**
+[Pause for user response — they may want to explore further, challenge the insight, or move on]
+
+**When ready to move on, options:**
 - Add note to project CLAUDE.md
 - Create new skill or update existing skill
 - Update existing documentation
-- Just discussion (no action needed)
-
-Your choice?
+- Continue (no capture needed)
 ```
 
-**For loose ends:**
+**For complex loose ends:**
 ```
-## Loose End: [Description]
+## Discussing: [Loose end description]
 
 **Context:** [When/why it came up in session]
 **Risk if ignored:** [What happens if we forget this]
+**Options I see:** [2-3 ways to handle this]
 
-**Proposed action:**
-- Create backlog item (I'll draft it using backlog-management skill)
-- Document in CLAUDE.md or other docs
-- Fix now in this session
-- Other (you specify)
-
-Your decision?
+[Pause for user input on how to proceed]
 ```
 
-If user chooses "Create backlog item":
+If user decides to create backlog item:
 - Use `backlog-management` skill to create properly formatted issue
 - Include session context in "Related" section
 
