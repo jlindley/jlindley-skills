@@ -1,7 +1,7 @@
 {
   "name": "jlindley-skills",
   "description": "Jim Lindley's custom skills for session management, spike exploration, and autonomous execution",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": {
     "name": "Jim Lindley"
   }

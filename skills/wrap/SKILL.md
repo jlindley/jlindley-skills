@@ -8,7 +8,9 @@ Complete end-of-session cleanup and analysis focusing on insights and loose ends
 
 ## Process
 
-### 1. Session Summary
+Use a heading for each section when presenting output. Do not number the headings.
+
+### Session Summary
 
 **Present a high-level summary of what happened in the session:**
 
@@ -29,7 +31,7 @@ Complete end-of-session cleanup and analysis focusing on insights and loose ends
 
 This summary provides context for the insights that follow.
 
-### 2. Generate Insights
+### Generate Insights
 
 **Start by answering: What would have made this session significantly better?** What was the most wasteful thing that happened — wrong approaches, unnecessary back-and-forth, missed opportunities to ask a question that would have saved 20 minutes, redundant work, agents dispatched that didn't earn their tokens? Name at least one thing Claude specifically should have done differently before attributing waste to external factors. This answer drives the insights below.
 
@@ -101,7 +103,7 @@ This summary provides context for the insights that follow.
 - User let Claude refactor 3 files before mentioning the existing utility that already handled the case. Sharing known constraints upfront prevents wasted motion.
 - User accepted all 5 code suggestions without review in a session touching auth logic. At least spot-checking security-sensitive changes catches errors Claude won't flag on its own.
 
-### 3. Scan for Loose Ends
+### Scan for Loose Ends
 
 **Scan conversation thoroughly for dropped threads:**
 - Unanswered user questions buried in backscroll
@@ -137,7 +139,7 @@ After listing loose ends, check whether the session has been autocompacted. To f
 
 Report: `**Session compacted:** Yes/No. [If yes: "~N turns compacted away. Full transcript available in session JSONL if deeper review needed."]`
 
-### 4. Present Selections for Follow-Up (1 interaction)
+### Present Selections for Follow-Up (1 interaction)
 
 Use `AskUserQuestion` tool with `multiSelect: true` for up to THREE separate questions (one per category). The tool allows up to 4 questions, each with up to 4 options.
 
@@ -172,7 +174,7 @@ Question 2 - Loose Ends (multiSelect: true):
 
 User checks items across all questions, submits once.
 
-### 5. Iterate Through Selected Items (1-by-1)
+### Iterate Through Selected Items (1-by-1)
 
 For each checked item in order, handle based on its prefix:
 
@@ -224,7 +226,7 @@ If user decides to create backlog item:
 - Use `backlog-management` skill to create properly formatted issue
 - Include session context in "Related" section
 
-### 6. Quick Document Mining (if applicable)
+### Quick Document Mining (if applicable)
 
 **Check for new documentation artifacts this session:**
 - New files in `docs/plans/`
@@ -235,7 +237,7 @@ If user decides to create backlog item:
 - Ask: "Want to run `/doc-cleanup` for these files?"
 - If no: Note in summary that docs exist for later cleanup
 
-### 7. Dense Summary
+### Dense Summary
 
 ```
 # Session Wrap
