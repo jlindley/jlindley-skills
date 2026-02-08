@@ -1,6 +1,0 @@
-{
-  "description": "Automatic autonomous execution resume after session interruption",
-  "hooks": {
-    "SessionStart": "${CLAUDE_PLUGIN_ROOT}/hooks/SessionStart"
-  }
-}
