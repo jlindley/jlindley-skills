@@ -1,5 +1,5 @@
 ---
-description: Critical end-of-session analysis - grade honestly by identifying what would have made the session better, surface problem-focused project/workflow insights, and identify dropped threads
+description: Critical end-of-session analysis - surface problem-focused insights on the project, workflow, and human-AI partnership, and identify dropped threads
 allowed-tools: Read, Grep, Glob
 model: claude-opus-4-6
 ---
@@ -27,21 +27,13 @@ Complete end-of-session cleanup and analysis focusing on insights and loose ends
 **Session type:** [e.g., "Feature implementation", "Bug investigation", "Refactoring", "Planning", "Configuration"]
 ```
 
-This summary provides context for the grades that follow.
+This summary provides context for the insights that follow.
 
-### 2. Session Grade & Generate Insights
+### 2. Generate Insights
 
-**Grade the session:**
-- Review conversation history
-- First, answer: **What would have made this session significantly better?** What was the most wasteful thing that happened — wrong approaches, unnecessary back-and-forth, missed opportunities to ask a question that would have saved 20 minutes, redundant work, agents dispatched that didn't earn their tokens? If nothing was wasteful, what kept this session from being exceptional?
-- Then assign a single grade (A-F) that follows from that answer
-- **BE CRITICAL AND HONEST:**
-  - The answer to "what would have been better" IS the grade justification
-  - Don't default to high grades - use the full A-F range
-  - B is good. C is acceptable. A means genuinely excellent with minimal wasted motion — almost nothing would have improved it
-  - If you can name 2+ things that would have meaningfully improved the session, it's not an A
+**Start by answering: What would have made this session significantly better?** What was the most wasteful thing that happened — wrong approaches, unnecessary back-and-forth, missed opportunities to ask a question that would have saved 20 minutes, redundant work, agents dispatched that didn't earn their tokens? Name at least one thing Claude specifically should have done differently before attributing waste to external factors. This answer drives the insights below.
 
-**Insight Generation Principles (applies to both Project and Workflow insights):**
+**Insight Generation Principles (applies to all insight categories):**
 - Bias toward problems: ~2/3rds negative examples (problems/gaps), ~1/3rd positive
 - If everything looks good, you're missing something - surface friction, confusion, overlooked problems
 - Generate fewer if quality isn't there - don't force it
@@ -50,10 +42,16 @@ This summary provides context for the grades that follow.
 - Be selective: Not every insight needs an action - many are just observations
 - Three action types:
   1. **Just an observation:** State it, that's it
-  2. **Document to persist:** Add to CLAUDE.md or project docs (only if systemic and worth maintenance cost)
+  2. **Persist it:** Write it down somewhere specific (see below)
   3. **Immediate action:** Something that needs closure this session (test something, audit files, etc.)
-- Only suggest documenting if it's recurring, high-value, and genuinely helps future sessions
-- Don't say "noted for next time" - either document it or it's gone (Claude doesn't automatically remember)
+- Don't say "noted for next time" - either write it down or it's gone (Claude doesn't automatically remember)
+- Only suggest persisting if it's a concrete, repeatable pattern — not situational advice
+
+**Where to persist (be specific when suggesting):**
+- **Project CLAUDE.md** — Instructions that should govern Claude's behavior on this project. Conventions, entity definitions, architectural rules, "always/never" guidance. _Example: "User entity: auth layer uses UserAccount, database uses UserProfile."_
+- **User-level ~/CLAUDE.md** — Cross-project patterns about how to work effectively with this user. Collaboration preferences, workflow patterns, tool usage lessons. _Example: "Jim prefers front-loading constraints over iterative clarification."_
+- **Skill file** — When a skill's instructions are wrong, incomplete, or conflict with another skill. Fix the source, don't work around it in CLAUDE.md.
+- **Project docs** — When the project's own documentation is stale or missing context that caused confusion this session.
 
 **Generate up to 3 Project Insights:**
 - First, identify ALL potential insights about THIS specific project, domain, codebase, or problem space
@@ -71,14 +69,37 @@ This summary provides context for the grades that follow.
 - First, identify ALL potential insights about Claude-user collaboration, tooling effectiveness, and tool orchestration
 - Then, select and report the top 3 most valuable insights (prioritize what would help improve future sessions)
 - **Test:** Would this insight apply to other projects or sessions?
-- **CRITICAL ANALYSIS REQUIRED:** For sessions involving multi-agent skills or parallel dispatch: Did agents stay in their lanes (scope exclusions honored)? Did information flow correctly between phases (was context lost between waves)? Did the coordinator make good use of agent output or did it bottleneck/flatten? Were model assignments appropriate for the judgment required? For simpler sessions: How did tools/skills/workflows interact? Any gaps in tooling or capability?
+- **INSTRUCTION SYSTEM AUDIT:** Use Glob and Read to check the actual instruction files — don't audit from memory. Read the project CLAUDE.md, ~/CLAUDE.md, and any skill files that were active this session. Look for conflicts, overlaps, or gaps in the instruction stack — skills, CLAUDE.md, project docs, and system-level guidance all pile up to produce behavior. When they contradict or interact in unintended ways, the result is Claude doing something subtly wrong that nobody explicitly designed. These are the highest-value workflow insights:
+  - Two skills that fire on overlapping triggers and give conflicting guidance
+  - CLAUDE.md rules that contradict a skill's instructions
+  - Project docs that describe patterns CLAUDE.md doesn't know about, when the gap caused confusion this session
+  - A skill that assumes a convention the project doesn't follow
+  - Instructions that were correct once but are now stale
+  - Gaps: behavior that surprised the user because no instruction covers it
+- For multi-agent sessions specifically: Did agents stay in their lanes? Did information flow between phases? Were model assignments appropriate?
 
 **Example Workflow Insights (mostly problems):**
-- Used Grep 6 times for variations of the same search - should have used Explore agent. **Action:** Check CLAUDE.md mentions when to use Explore vs. direct Grep.
-- User said "fix the bug" but we implemented a different bug - spent 10 minutes on wrong issue. Should have clarified upfront.
+- The `writing-skills` skill says to use TDD, but CLAUDE.md says "never commit test files" — these interact poorly when testing skills that need git repos. **Action:** Add guidance to CLAUDE.md clarifying the tmp/ testing workflow.
+- The `autonomous-execution` skill and `executing-plans` skill both trigger on "execute this plan" — unclear which takes precedence. Should have explicit disambiguation.
 - Started implementation without reading existing similar code - rewrote existing pattern. Need to search before implementing.
 - Spent 20 minutes implementing a feature that a library already provides. **Action:** Add to CLAUDE.md: "Search for existing libraries before custom implementation."
 - User providing a reference implementation upfront eliminated 4 clarification rounds
+
+**Generate up to 3 Partnership Insights:**
+- Evaluate the human side of the collaboration — not to assign blame, but because human habits are the highest-leverage improvement vector
+- **Test:** Does this insight help the user get more out of Claude across any project?
+- **Ground in observable events** — cite specific countable moments from the session (N clarification rounds, N corrections, N turns before first action), not subjective assessments like "delegation could have been clearer"
+- Focus areas:
+  - **Context-setting:** Did the session start with enough upfront context (files, constraints, success criteria), or did Claude spend early turns inferring intent?
+  - **Delegation clarity:** Were instructions specific enough to act on, or vague enough that Claude had to guess?
+  - **Intervention timing:** Did the user course-correct early when things went off-track, or let Claude run in the wrong direction?
+  - **Navigation vs driving:** Did the user stay strategic (intent, architecture, acceptance criteria) or drop into implementation details Claude could have handled?
+  - **Challenge & verification:** Did the user critically evaluate Claude's outputs, or accept them wholesale? Zero pushback across a complex session is a smell, not a success.
+
+**Example Partnership Insights:**
+- 4 clarification rounds before first action. Front-loading the error message, file, and expected behavior would have saved ~10 minutes. **Action:** Add to ~/CLAUDE.md: "Start task descriptions with: error/goal, relevant files, constraints."
+- User let Claude refactor 3 files before mentioning the existing utility that already handled the case. Sharing known constraints upfront prevents wasted motion.
+- User accepted all 5 code suggestions without review in a session touching auth logic. At least spot-checking security-sensitive changes catches errors Claude won't flag on its own.
 
 ### 3. Scan for Loose Ends
 
@@ -111,6 +132,11 @@ This summary provides context for the grades that follow.
 - `[Medium Risk - Confusion] Both user and Claude uncertain about cache invalidation - Never tested the behavior`
 - `[Low Risk - Cleanup] Generated debug files in tmp/ during investigation - Left behind, may confuse later`
 
+**Compaction check:**
+After listing loose ends, check whether the session has been autocompacted. To find the current session's JSONL log: derive the project directory name by replacing `/` with `-` in the CWD path (e.g., `/Users/jlindley/Code/foo` → `-Users-jlindley-Code-foo`), then find the most recently modified `.jsonl` in `~/.claude/projects/<that-dir>/`. Count its `user` and `assistant` type entries and compare to the number of conversation turns visible in context. If the JSONL has significantly more entries, compaction occurred and early conversation content is only in the log file, not in context.
+
+Report: `**Session compacted:** Yes/No. [If yes: "~N turns compacted away. Full transcript available in session JSONL if deeper review needed."]`
+
 ### 4. Present Selections for Follow-Up (1 interaction)
 
 Use `AskUserQuestion` tool with `multiSelect: true` for up to THREE separate questions (one per category). The tool allows up to 4 questions, each with up to 4 options.
@@ -135,7 +161,7 @@ The user should never be surprised by whether an item will pause for input or ju
 ```
 Question 1 - Insights (multiSelect: true):
 [ ] Discuss: Panel workflow effectiveness
-[ ] Discuss: Voice consistency patterns
+[ ] Discuss: Context-setting pattern (partnership)
 [ ] Explore: Worksheet as escape hatch for density
 
 Question 2 - Loose Ends (multiSelect: true):
@@ -176,11 +202,11 @@ Move on to next item without asking for input.
 
 [Pause for user response — they may want to explore further, challenge the insight, or move on]
 
-**When ready to move on, options:**
-- Add note to project CLAUDE.md
-- Create new skill or update existing skill
-- Update existing documentation
-- Continue (no capture needed)
+**When ready to move on, offer to persist if applicable:**
+- Draft the exact line/paragraph to add and name the specific file
+- Only show destinations relevant to this insight (don't offer "Update skill file" if no skills were involved)
+- Make it a single confirmation: "Add this to [file]? y/n"
+- If no persist action fits, just move on
 ```
 
 **For complex loose ends:**
@@ -214,11 +240,12 @@ If user decides to create backlog item:
 ```
 # Session Wrap
 
-**Grade:** [A-F] - [What would have made it better]
+**What would have been better:** [1-2 sentence answer]
 
 **Key Insights:**
 - [List project insights generated]
 - [List workflow insights generated]
+- [List partnership insights generated]
 
 **Loose Ends:** [Count] ([X addressed, Y deferred])
 
@@ -233,11 +260,7 @@ If user decides to create backlog item:
 ## Usage
 
 ```bash
-# Standard end-of-session wrap
 /wrap
-
-# Quick wrap (skip follow-up prompts, just show grade + loose ends)
-/wrap --quick
 ```
 
 ## Important Guidelines
@@ -253,5 +276,5 @@ If user decides to create backlog item:
 ## Related Tools & Skills
 
 - **Skill:** `backlog-management` - For creating properly formatted backlog items
-- **Command:** `/grade` - Standalone grading (subset of what /wrap does)
+- **Command:** `/grade` - Standalone session quality check (subset of what /wrap does)
 - **Command:** `/doc-cleanup` - Dedicated doc cleanup (referenced if artifacts found)
