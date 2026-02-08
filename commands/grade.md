@@ -1,81 +1,45 @@
 ---
-description: Analyze current session quality with grades and actionable insights
+description: Quick session quality check - single honest grade driven by what would have been better, plus actionable insights
+model: claude-opus-4-6
 ---
 
-Perform a holistic analysis of the current session from start to this point.
+Standalone grading — a subset of what `/wrap` does, without the interactive follow-up, document mining, or loose ends scan.
 
-## Analysis Process
+## Process
 
 1. **Review the conversation history** from session start to now
-2. **Identify 3-10 factors** that were most relevant and impactful to this session
-   - Auto-detect based on session type (dev work, research, brainstorming, debugging, etc.)
-   - Include both Claude's performance AND external factors (instruction quality, codebase state, documentation, etc.)
-   - Focus on factors that actually dominated or impacted the session
-3. **Grade each factor** using traditional academic scale (A+, A, A-, B+, B, B-, C+, C, C-, D, F)
-   - A range: Excellent - met or exceeded best practices
-   - B range: Good - solid work with minor areas for improvement
-   - C range: Acceptable - got the job done but with notable issues
-   - D range: Poor - significant problems that hindered progress
-   - F: Failed - critical failures or complete misses
-4. **Write 1-2 sentence explanations** for each grade with specifics about what happened and how it impacted the session
-5. **Generate actionable suggestions in two categories:**
-   - **Session-specific insights (3-5)** - Tactical next steps for current work, process improvements for this session
-   - **Meta insights (1-3)** - Systemic observations about how we're working together, the tooling, skills ecosystem, recurring patterns, automation opportunities, skill conflicts/gaps, architectural debt worth addressing long-term
-6. **Write a narrative summary** (2-3 sentences) of overall session quality and key themes
+2. **Answer: What would have made this session significantly better?** What was the most wasteful thing that happened — wrong approaches, unnecessary back-and-forth, missed opportunities to ask a question that would have saved 20 minutes, redundant work, agents dispatched that didn't earn their tokens? If nothing was wasteful, what kept this session from being exceptional?
+3. **Assign a single grade (A-F)** that follows from that answer
+4. **Generate insights** (session-specific and meta)
+
+## Grading
+
+- The answer to "what would have been better" IS the grade justification
+- Don't default to high grades — use the full A-F range
+- B is good. C is acceptable. A means genuinely excellent with minimal wasted motion — almost nothing would have improved it
+- If you can name 2+ things that would have meaningfully improved the session, it's not an A
 
 ## Output Format
 
 ```
-# Session Analysis
+# Session Grade
 
-[2-3 sentence narrative summary of overall session quality and key themes]
+**What would have been better:** [1-3 concrete things that would have improved the session]
 
-## Factor Grades
-[Ordered by importance/impact, not alphabetically or by grade]
+**Grade: [A-F]**
 
-**[Factor name]: [Grade]**
-[1-2 sentence explanation with specifics]
+## Session Insights (up to 3)
+- [Patterns from this specific session, what went well/poorly, process observations]
 
-**[Factor name]: [Grade]**
-[1-2 sentence explanation with specifics]
-
-[Continue for all 3-10 factors]
-
-## Session-Specific Insights
-
-1. [Tactical next step or process improvement for this work]
-2. [...]
-3. [...]
-
-[3-5 insights total]
-
-## Meta Insights
-
-1. [Systemic observation about tooling, skills, patterns, or ecosystem]
-2. [...]
-
-[1-3 insights total]
+## Meta Insights (up to 3)
+- [Broader learnings beyond this session — tooling, skills, collaboration patterns]
+- For sessions involving multi-agent skills or parallel dispatch: Did agents stay in their lanes? Did information flow correctly between phases? Were model assignments appropriate?
 ```
 
 ## Important Guidelines
 
-- **Be honest** - Grade critically and fairly, including external factors
-- **Be specific** - Reference actual events from the session, not generic observations
-- **Order by impact** - Most session-defining factors first
-- **Always include meta insights** - Don't skip the meta layer; look for patterns, skill conflicts, missing tools, ecosystem improvements
-- **Focus suggestions** - High-impact, pragmatic changes over generic advice
-- **Handle edge cases**:
-  - Very short sessions: Note limited data, still provide analysis
-  - Sessions with failures: Grade honestly, focus suggestions on recovery
-  - Multi-topic sessions: Identify dominant thread or grade each major thread
-
-## Example Factors by Session Type
-
-**Dev work:**
-- Code quality, test coverage, instruction clarity, tool usage, skill adherence, problem-solving creativity, codebase architecture/debt
-
-**Research/exploration:**
-- Search strategy, context gathering, question quality, information synthesis, documentation quality
-
-**Cross-cutting (any session):**
-- Communication clarity, TodoWrite usage, efficiency, skill ecosystem issues, workflow automation opportunities
+- **Be honest** — grade critically; reference actual events, not generic observations
+- **Bias toward problems** — ~2/3 negative insights, ~1/3 positive
+- **Don't force insights** — fewer high-quality beats more filler
+- **Always include meta layer** — how did tools/skills/workflows interact?
+- **Focus suggestions** — high-impact, pragmatic changes over generic advice
