@@ -31,6 +31,10 @@ Skills often need real git repositories to test properly (commits, branches, dif
 
 The `tmp/` directory is gitignored, so test projects won't accidentally get committed.
 
+## Plugin Versioning
+
+Bump the version in `.claude-plugin/plugin.json` whenever you make changes to this repo. The marketplace update mechanism compares version strings — if the version hasn't changed, updates are silently skipped even when the code has changed.
+
 ## Skill Development
 
 Follow the writing-skills skill for creating and testing skills. Remember to use TDD approach:
